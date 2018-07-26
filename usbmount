@@ -48,6 +48,7 @@ MOUNTPOINTS=
 FILESYSTEMS=
 MOUNTOPTIONS=
 FS_MOUNTOPTIONS=
+FS_MOUNTCOMMANDS=
 VERBOSE=no
 
 if [ -r /etc/usbmount/usbmount.conf ]; then
@@ -133,10 +134,17 @@ if [ "$1" = add ]; then
 		if [ -n "$MOUNTOPTIONS" ]; then
 		    options="$MOUNTOPTIONS${options:+,$options}"
 		fi
+		mountcmd="mount -t$fstype"
+		for v in $FS_MOUNTCOMMANDS; do
+		    if expr "$v" : "-fstype=$fstype,."; then
+			mountcmd="$(echo "$v" | sed 's/^[^,]*,//')"
+			break
+		    fi
+		done
 
 		# Mount the filesystem.
-		log info "executing command: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint"
-		mount "-t$fstype" "${options:+-o$options}" "$DEVNAME" "$mountpoint"
+		log info "executing command: $mountcmd ${options:+-o$options} $DEVNAME $mountpoint"
+		$mountcmd "${options:+-o$options}" "$DEVNAME" "$mountpoint"
 
 		# Determine vendor and model.
 		vendor=
